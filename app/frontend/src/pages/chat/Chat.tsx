@@ -135,7 +135,7 @@ const Chat = () => {
             setShowAgenticRetrievalOption(config.showAgenticRetrievalOption);
             setUseAgenticRetrieval(config.showAgenticRetrievalOption);
             setWebSourceSupported(config.webSourceEnabled);
-            setWebSourceEnabled(config.webSourceEnabled);
+            setWebSourceEnabled(config.webSourceEnabled !== false);
             setSharePointSourceSupported(config.sharepointSourceEnabled);
             setSharePointSourceEnabled(config.sharepointSourceEnabled);
             if (config.showAgenticRetrievalOption) {

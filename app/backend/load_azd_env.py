@@ -10,6 +10,14 @@ logger = logging.getLogger("scripts")
 
 def load_azd_env():
     """Get path to current azd env file and load file using python-dotenv"""
+    # First try to load from local .env file
+    local_env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if os.path.exists(local_env_path):
+        logger.info("Loading environment from local .env file: %s", local_env_path)
+        load_dotenv(local_env_path, override=True)
+        return
+
+    # Fallback to azd if .env doesn't exist
     result = subprocess.run("azd env list -o json", shell=True, capture_output=True, text=True)
     if result.returncode != 0:
         raise Exception("Error loading azd env")

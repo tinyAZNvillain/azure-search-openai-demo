@@ -44,22 +44,24 @@ async def main():
         results_no_acl = await search_client.search(
             search_text="*",
             top=5,
-            select=["id", "sourcefile"],
+            select=["chunk_id", "title"],
             include_total_count=True,
         )
         docs_no_acl = [doc async for doc in results_no_acl]
         print(f"Results returned: {len(docs_no_acl)}")
         print(f"Total count: {await results_no_acl.get_count()}")
         for doc in docs_no_acl:
-            print(f"  - {doc.get('sourcefile')}")
+            print(f"  - {doc.get('title')} (ID: {doc.get('chunk_id')})")
 
         # Search WITH user token:
         # This enables automatic ACL filtering based on the user's identity
+        # NOTE: This index doesn't have ACL fields (oids/groups), so filtering won't work
         print("\n=== Search with ACL header and token (x-ms-query-source-authorization) ===")
+        print("WARNING: Index missing 'oids' and 'groups' fields - ACL filtering not available")
         results = await search_client.search(
             search_text="*",
             top=5,
-            select=["id", "sourcefile"],
+            select=["chunk_id", "title"],
             include_total_count=True,
             x_ms_query_source_authorization=user_token,  # No "Bearer " prefix!
         )
@@ -67,14 +69,15 @@ async def main():
         print(f"Results returned: {len(docs)}")
         print(f"Total count: {await results.get_count()}")
         for doc in docs:
-            print(f"  - {doc.get('sourcefile')}")
+            print(f"  - {doc.get('title')} (ID: {doc.get('chunk_id')})")
 
         # Search with elevated read (bypasses ACL filtering - for debugging)
         print("\n=== Search with elevated read header (x-ms-enable-elevated-read) ===")
+        print("WARNING: Index missing 'oids' and 'groups' fields - ACL data not available")
         elevated_results = await search_client.search(
             search_text="*",
             top=5,
-            select=["id", "sourcefile", "oids", "groups"],
+            select=["chunk_id", "title", "parent_id"],
             include_total_count=True,
             x_ms_enable_elevated_read=True,
         )
@@ -82,9 +85,8 @@ async def main():
         print(f"Results returned: {len(elevated_docs)}")
         print(f"Total count: {await elevated_results.get_count()}")
         for doc in elevated_docs:
-            print(f"  - {doc.get('sourcefile')}")
-            print(f"    oids: {doc.get('oids', [])}")
-            print(f"    groups: {doc.get('groups', [])}")
+            print(f"  - {doc.get('title')} (ID: {doc.get('chunk_id')})")
+            print(f"    parent_id: {doc.get('parent_id')}")
 
 
 if __name__ == "__main__":

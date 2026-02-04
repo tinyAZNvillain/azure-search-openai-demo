@@ -125,6 +125,44 @@ class ChatReadRetrieveReadApproach(Approach):
         chat_completion_response: ChatCompletion = await cast(Awaitable[ChatCompletion], chat_coroutine)
         content = chat_completion_response.choices[0].message.content
         role = chat_completion_response.choices[0].message.role
+
+        # Extract citations from the response
+        import re
+        citations_in_response = re.findall(r'\[([^\]]+)\]', content or "")
+
+        print("\n" + "🤖"*40)
+        print("🤖 LLM RESPONSE ANALYSIS")
+        print("🤖"*40)
+        print(f"  Response Length: {len(content) if content else 0} characters")
+        print(f"  Citations Found in Response: {len(citations_in_response)}")
+        if citations_in_response:
+            unique_citations = list(set(citations_in_response))
+            print(f"  Unique Citations Used: {len(unique_citations)}")
+            print(f"\n  📎 Citations Actually Used by Model:")
+            for idx, citation in enumerate(unique_citations, 1):
+                print(f"      [{idx}] [{citation}]")
+
+            # Check if citations match what was provided
+            available_citations = extra_info.data_points.citations or []
+            print(f"\n  ✅ Citation Validation:")
+            for citation in unique_citations:
+                if citation in available_citations:
+                    print(f"      ✓ [{citation}] - Valid (was provided to model)")
+                else:
+                    print(f"      ✗ [{citation}] - INVALID (NOT in provided citations!)")
+
+            # Show citations that were provided but NOT used
+            unused_citations = [c for c in available_citations if c not in citations_in_response]
+            if unused_citations:
+                print(f"\n  📋 Citations Provided But NOT Used: {len(unused_citations)}")
+                for idx, citation in enumerate(unused_citations[:10], 1):  # Show first 10
+                    print(f"      [{idx}] {citation}")
+                if len(unused_citations) > 10:
+                    print(f"      ... and {len(unused_citations) - 10} more")
+        else:
+            print(f"  ⚠️  No citations found in response!")
+            print(f"  Available citations were: {len(extra_info.data_points.citations or [])}")
+        print("🤖"*40 + "\n")
         if overrides.get("suggest_followup_questions"):
             content, followup_questions = self.extract_followup_questions(content)
             extra_info.followup_questions = followup_questions
@@ -143,6 +181,18 @@ class ChatReadRetrieveReadApproach(Approach):
             },
             "session_state": session_state,
         }
+
+        print("\n" + "="*80)
+        print("📊 COMPLETE REQUEST SUMMARY")
+        print("="*80)
+        print(f"  Original Query: {messages[-1]['content'] if messages else 'N/A'}")
+        print(f"  Top-K Requested: {overrides.get('top', 3)}")
+        print(f"  Documents Retrieved: {len(extra_info.data_points.text or [])}")
+        print(f"  Citations Available: {len(extra_info.data_points.citations or [])}")
+        print(f"  Citations Actually Used: {len(set(citations_in_response)) if 'citations_in_response' in locals() else 0}")
+        print(f"  Response Length: {len(content) if content else 0} chars")
+        print("="*80 + "\n")
+
         return chat_app_response
 
     async def run_with_streaming(
@@ -297,6 +347,20 @@ class ChatReadRetrieveReadApproach(Approach):
 
             return (extra_info, return_answer())
 
+        print("\n" + "🎯"*40)
+        print("🎯 COMPOSING FINAL LLM PROMPT")
+        print("🎯"*40)
+        print(f"  User Query: {original_user_query}")
+        print(f"  Past Messages in Context: {len(messages[:-1])}")
+        print(f"  Text Sources Included: {len(extra_info.data_points.text) if extra_info.data_points.text else 0}")
+        print(f"  Image Sources Included: {len(extra_info.data_points.images) if extra_info.data_points.images else 0}")
+        print(f"  Citations Available to Model: {len(extra_info.data_points.citations) if extra_info.data_points.citations else 0}")
+        if extra_info.data_points.citations:
+            print(f"\n  📚 Citations List Provided to Model:")
+            for idx, citation in enumerate(extra_info.data_points.citations, 1):
+                print(f"      [{idx}] {citation}")
+        print("🎯"*40 + "\n")
+
         messages = self.prompt_manager.render_prompt(
             self.answer_prompt,
             self.get_system_prompt_variables(overrides.get("prompt_template"))
@@ -309,6 +373,17 @@ class ChatReadRetrieveReadApproach(Approach):
                 "citations": extra_info.data_points.citations,
             },
         )
+
+        print("\n" + "✨"*40)
+        print("✨ PROMPT RENDERED - READY TO CALL LLM")
+        print("✨"*40)
+        print(f"  Model: {self.chatgpt_model}")
+        print(f"  Deployment: {self.chatgpt_deployment}")
+        print(f"  Total Messages in Prompt: {len(messages)}")
+        # Calculate approximate token count
+        total_prompt_chars = sum(len(str(msg.get('content', ''))) for msg in messages)
+        print(f"  Approximate Prompt Tokens (chars/4): ~{total_prompt_chars//4:,}")
+        print("✨"*40 + "\n")
 
         chat_coroutine = cast(
             Awaitable[ChatCompletion] | Awaitable[AsyncStream[ChatCompletionChunk]],
@@ -357,6 +432,26 @@ class ChatReadRetrieveReadApproach(Approach):
         if not isinstance(original_user_query, str):
             raise ValueError("The most recent message content must be a string.")
 
+        print("\n" + "🌟"*40)
+        print("🚀 RUN SEARCH APPROACH - CONFIGURATION")
+        print("🌟"*40)
+        print(f"  Original User Query: {original_user_query}")
+        print(f"  Retrieval Mode: {overrides.get('retrieval_mode', 'text')}")
+        print(f"  Top-K: {top}")
+        print(f"  Use Text Search: {use_text_search}")
+        print(f"  Use Vector Search: {use_vector_search}")
+        print(f"  Use Semantic Ranker: {use_semantic_ranker}")
+        print(f"  Use Semantic Captions: {use_semantic_captions}")
+        print(f"  Use Query Rewriting: {use_query_rewriting}")
+        print(f"  Minimum Search Score: {minimum_search_score}")
+        print(f"  Minimum Reranker Score: {minimum_reranker_score}")
+        print(f"  Search Index Filter: {search_index_filter}")
+        print(f"  Send Text Sources: {send_text_sources}")
+        print(f"  Send Image Sources: {send_image_sources}")
+        print(f"  Search Text Embeddings: {search_text_embeddings}")
+        print(f"  Search Image Embeddings: {search_image_embeddings}")
+        print("🌟"*40 + "\n")
+
         # STEP 1: Generate an optimized keyword search query based on the chat history and the last question
 
         rewrite_result = await self.rewrite_query(
@@ -375,6 +470,13 @@ class ChatReadRetrieveReadApproach(Approach):
         )
 
         query_text = rewrite_result.query
+
+        print("\n" + "💭"*40)
+        print("🔄 QUERY REWRITING RESULT")
+        print("💭"*40)
+        print(f"  Original Query: {original_user_query}")
+        print(f"  Rewritten Query: {query_text}")
+        print("💭"*40 + "\n")
 
         # STEP 2: Retrieve relevant documents from the search index with the GPT optimized query
 
@@ -408,6 +510,20 @@ class ChatReadRetrieveReadApproach(Approach):
             download_image_sources=send_image_sources,
             user_oid=auth_claims.get("oid"),
         )
+
+        print("\n" + "📦"*40)
+        print("📦 DATA READY FOR LLM PROMPT")
+        print("📦"*40)
+        print(f"  Results Returned from Search: {len(results)}")
+        print(f"  Citations Available: {len(data_points.citations) if data_points.citations else 0}")
+        print(f"  Text Sources Being Sent: {len(data_points.text) if data_points.text else 0}")
+        print(f"  Image Sources Being Sent: {len(data_points.images) if data_points.images else 0}")
+        if data_points.text:
+            total_chars = sum(len(text) for text in data_points.text)
+            print(f"  Total Text Characters: {total_chars:,}")
+            print(f"  Estimated Tokens (chars/4): ~{total_chars//4:,}")
+        print("📦"*40 + "\n")
+
         extra_info = ExtraInfo(
             data_points,
             thoughts=[

@@ -258,6 +258,8 @@ class Approach(ABC):
         image_embeddings_client: Optional[ImageEmbeddings] = None,
         global_blob_manager: Optional[BlobManager] = None,
         user_blob_manager: Optional[AdlsBlobManager] = None,
+        content_field: str = "content",
+        sourcepage_field: str = "sourcepage",
     ):
         self.search_client = search_client
         self.openai_client = openai_client
@@ -281,6 +283,8 @@ class Approach(ABC):
         self.image_embeddings_client = image_embeddings_client
         self.global_blob_manager = global_blob_manager
         self.user_blob_manager = user_blob_manager
+        self.content_field = content_field
+        self.sourcepage_field = sourcepage_field
 
     def build_filter(self, overrides: dict[str, Any]) -> Optional[str]:
         include_category = overrides.get("include_category")
@@ -307,6 +311,22 @@ class Approach(ABC):
         use_query_rewriting: Optional[bool] = None,
         access_token: Optional[str] = None,
     ) -> list[Document]:
+        print("\n" + "="*80)
+        print("🔍 SEARCH PARAMETERS:")
+        print("="*80)
+        print(f"  Query Text: {query_text}")
+        print(f"  Top-K Requested: {top}")
+        print(f"  Filter: {filter}")
+        print(f"  Use Text Search: {use_text_search}")
+        print(f"  Use Vector Search: {use_vector_search}")
+        print(f"  Use Semantic Ranker: {use_semantic_ranker}")
+        print(f"  Use Semantic Captions: {use_semantic_captions}")
+        print(f"  Use Query Rewriting: {use_query_rewriting}")
+        print(f"  Minimum Search Score: {minimum_search_score}")
+        print(f"  Minimum Reranker Score: {minimum_reranker_score}")
+        print(f"  Vector Queries Count: {len(vectors)}")
+        print("="*80 + "\n")
+
         search_text = query_text if use_text_search else ""
         search_vectors = vectors if use_vector_search else []
         if use_semantic_ranker:
@@ -320,7 +340,7 @@ class Approach(ABC):
                 query_type=QueryType.SEMANTIC,
                 query_language=self.query_language,
                 query_speller=self.query_speller,
-                semantic_configuration_name="default",
+                semantic_configuration_name="llm-mvp-index-documents2-semantic-configuration",
                 semantic_query=query_text,
                 x_ms_query_source_authorization=access_token,
             )
@@ -338,19 +358,34 @@ class Approach(ABC):
             async for document in page:
                 documents.append(
                     Document(
-                        id=document.get("id"),
-                        content=document.get("content"),
-                        category=document.get("category"),
-                        sourcepage=document.get("sourcepage"),
-                        sourcefile=document.get("sourcefile"),
-                        oids=document.get("oids"),
-                        groups=document.get("groups"),
+                        id=document.get("chunk_id"),
+                        content=document.get(self.content_field),
+                        category=None,
+                        sourcepage=document.get(self.sourcepage_field),
+                        sourcefile=document.get("title"),
+                        oids=None,
+                        groups=None,
                         captions=cast(list[QueryCaptionResult], document.get("@search.captions")),
                         score=document.get("@search.score"),
                         reranker_score=document.get("@search.reranker_score"),
                         images=document.get("images"),
                     )
                 )
+
+            print("\n" + "="*80)
+            print(f"📄 RAW SEARCH RESULTS (Total: {len(documents)} documents returned)")
+            print("="*80)
+            for idx, doc in enumerate(documents, 1):
+                content_preview = (doc.content[:100] + "...") if doc.content and len(doc.content) > 100 else doc.content
+                print(f"\n  [{idx}] Document ID: {doc.id}")
+                print(f"      Sourcepage: {doc.sourcepage}")
+                print(f"      Sourcefile: {doc.sourcefile}")
+                print(f"      Search Score: {doc.score:.4f}" if doc.score else "      Search Score: None")
+                print(f"      Reranker Score: {doc.reranker_score:.4f}" if doc.reranker_score else "      Reranker Score: None")
+                print(f"      Has Captions: {bool(doc.captions)}")
+                print(f"      Has Images: {bool(doc.images)}")
+                print(f"      Content Preview: {content_preview}")
+            print("="*80 + "\n")
 
             qualified_documents = [
                 doc
@@ -360,6 +395,20 @@ class Approach(ABC):
                     and (doc.reranker_score or 0) >= (minimum_reranker_score or 0)
                 )
             ]
+
+            print("\n" + "="*80)
+            print(f"✅ QUALIFIED DOCUMENTS AFTER FILTERING (Total: {len(qualified_documents)})")
+            print("="*80)
+            filtered_count = len(documents) - len(qualified_documents)
+            if filtered_count > 0:
+                print(f"  ⚠️  {filtered_count} documents filtered out by score thresholds:")
+                print(f"     - Minimum Search Score: {minimum_search_score}")
+                print(f"     - Minimum Reranker Score: {minimum_reranker_score}")
+            for idx, doc in enumerate(qualified_documents, 1):
+                print(f"\n  [{idx}] Sourcepage: {doc.sourcepage}")
+                print(f"      Search Score: {doc.score:.4f}" if doc.score else "      Search Score: None")
+                print(f"      Reranker Score: {doc.reranker_score:.4f}" if doc.reranker_score else "      Reranker Score: None")
+            print("="*80 + "\n")
 
         return qualified_documents
 
@@ -601,12 +650,12 @@ class Approach(ABC):
                     Document(
                         id=ref.doc_key,
                         ref_id=ref.id,
-                        content=ref.source_data.get("content"),
-                        category=ref.source_data.get("category"),
-                        sourcepage=ref.source_data.get("sourcepage"),
-                        sourcefile=ref.source_data.get("sourcefile"),
-                        oids=ref.source_data.get("oids"),
-                        groups=ref.source_data.get("groups"),
+                        content=ref.source_data.get(self.content_field),
+                        category=None,
+                        sourcepage=ref.source_data.get(self.sourcepage_field),
+                        sourcefile=ref.source_data.get("title"),
+                        oids=None,
+                        groups=None,
                         reranker_score=getattr(ref, "reranker_score", None),
                         images=ref.source_data.get("images"),
                         activity=activity_details_by_id[ref.activity_source],
@@ -747,6 +796,19 @@ class Approach(ABC):
             s = s.replace(":::", "&#58;&#58;&#58;")  # escape DocFX/markdown triple colons
             return s
 
+        print("\n" + "="*80)
+        print("📝 BUILDING CITATIONS & DATA POINTS")
+        print("="*80)
+        print(f"  Input Documents: {len(results)}")
+        print(f"  Use Semantic Captions: {use_semantic_captions}")
+        print(f"  Include Text Sources: {include_text_sources}")
+        print(f"  Download Image Sources: {download_image_sources}")
+        if web_results:
+            print(f"  Web Results: {len(web_results)}")
+        if sharepoint_results:
+            print(f"  SharePoint Results: {len(sharepoint_results)}")
+        print("="*80 + "\n")
+
         citations = []
         text_sources = []
         image_sources = []
@@ -754,6 +816,7 @@ class Approach(ABC):
         external_results_metadata: list[dict[str, Any]] = []
         citation_activity_details: dict[str, dict[str, Any]] = {}
 
+        print("Processing Documents for Citations:\n")
         for doc in results:
             # Get the citation for the source page
             citation = self.get_citation(doc.sourcepage)
@@ -819,6 +882,26 @@ class Approach(ABC):
                         "activity": asdict(sp.activity) if sp.activity else None,
                     }
                 )
+
+        print("\n" + "="*80)
+        print("📋 FINAL DATA POINTS SUMMARY")
+        print("="*80)
+        print(f"  Total Citations: {len(citations)}")
+        print(f"  Total Text Sources: {len(text_sources)}")
+        print(f"  Total Image Sources: {len(image_sources)}")
+        print(f"  External Results Metadata: {len(external_results_metadata)}")
+        print(f"\n  Citations List:")
+        for idx, citation in enumerate(citations, 1):
+            print(f"    [{idx}] {citation}")
+        print(f"\n  Text Sources Preview (showing first 150 chars of each):")
+        for idx, text_source in enumerate(text_sources, 1):
+            preview = text_source[:150] + "..." if len(text_source) > 150 else text_source
+            print(f"    [{idx}] {preview}")
+        if external_results_metadata:
+            print(f"\n  External Results:")
+            for idx, meta in enumerate(external_results_metadata, 1):
+                print(f"    [{idx}] {meta.get('title', 'N/A')} - {meta.get('url', 'N/A')}")
+        print("="*80 + "\n")
 
         return DataPoints(
             text=text_sources,

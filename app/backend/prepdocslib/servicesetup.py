@@ -9,7 +9,7 @@ from typing import Optional
 from azure.core.credentials import AzureKeyCredential
 from azure.core.credentials_async import AsyncTokenCredential
 from azure.identity.aio import get_bearer_token_provider
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI, AsyncOpenAI
 
 from .blobmanager import BlobManager
 from .csvparser import CsvParser
@@ -94,31 +94,35 @@ def setup_openai_client(
     azure_openai_endpoint: Optional[str] = None
 
     if openai_host in [OpenAIHost.AZURE, OpenAIHost.AZURE_CUSTOM]:
-        base_url: Optional[str] = None
-        api_key_or_token: Optional[str | Callable[[], Awaitable[str]]] = None
+        api_version = "2024-12-01-preview"
+
         if openai_host == OpenAIHost.AZURE_CUSTOM:
             logger.info("OPENAI_HOST is azure_custom, setting up Azure OpenAI custom client")
             if not azure_openai_custom_url:
                 raise ValueError("AZURE_OPENAI_CUSTOM_URL must be set when OPENAI_HOST is azure_custom")
-            base_url = azure_openai_custom_url
+            azure_openai_endpoint = azure_openai_custom_url.rstrip("/")
         else:
             logger.info("OPENAI_HOST is azure, setting up Azure OpenAI client")
             if not azure_openai_service:
                 raise ValueError("AZURE_OPENAI_SERVICE must be set when OPENAI_HOST is azure")
             azure_openai_endpoint = f"https://{azure_openai_service}.openai.azure.com"
-            base_url = f"{azure_openai_endpoint}/openai/v1"
+
         if azure_openai_api_key:
             logger.info("AZURE_OPENAI_API_KEY_OVERRIDE found, using as api_key for Azure OpenAI client")
-            api_key_or_token = azure_openai_api_key
+            openai_client = AsyncAzureOpenAI(
+                azure_endpoint=azure_openai_endpoint,
+                api_key=azure_openai_api_key,
+                api_version=api_version,
+            )
         else:
             logger.info("Using Azure credential (passwordless authentication) for Azure OpenAI client")
-            api_key_or_token = get_bearer_token_provider(
-                azure_credential, "https://cognitiveservices.azure.com/.default"
+            openai_client = AsyncAzureOpenAI(
+                azure_endpoint=azure_openai_endpoint,
+                azure_ad_token_provider=get_bearer_token_provider(
+                    azure_credential, "https://cognitiveservices.azure.com/.default"
+                ),
+                api_version=api_version,
             )
-        openai_client = AsyncOpenAI(
-            base_url=base_url,
-            api_key=api_key_or_token,
-        )
     elif openai_host == OpenAIHost.LOCAL:
         logger.info("OPENAI_HOST is local, setting up local OpenAI client for OPENAI_BASE_URL with no key")
         openai_client = AsyncOpenAI(
