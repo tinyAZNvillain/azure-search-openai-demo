@@ -502,7 +502,7 @@ class Approach(ABC):
 
         knowledge_source_params = [
             SearchIndexKnowledgeSourceParams(
-                knowledge_source_name=search_index_name,
+                knowledge_source_name="search-index",  # Must match the name we created in the KB
                 filter_add_on=filter_add_on,
                 include_references=True,
                 include_reference_source_data=True,
