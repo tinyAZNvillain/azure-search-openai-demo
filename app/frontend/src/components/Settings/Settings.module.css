@@ -55,12 +55,40 @@
 }
 
 .fieldset {
-    border: none;
-    padding: 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 12px 0;
+    background-color: #fafafa;
 }
 
 .legend {
     font-size: 14px;
-    margin-bottom: 5px;
-    padding: 0;
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding: 0 4px;
+    color: #323130;
+}
+
+.sectionHeader {
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    color: #201f1e;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 8px;
+}
+
+.checkboxGroup {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 12px 0;
+    background-color: #fafafa;
+}
+
+.nestedCheckbox {
+    margin-left: 24px;
+    margin-top: 8px;
 }

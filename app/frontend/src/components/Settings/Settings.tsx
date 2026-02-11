@@ -147,101 +147,108 @@ export const Settings = ({
     return (
         <div className={className}>
             {streamingEnabled && (
-                <>
-                    <Checkbox
-                        id={shouldStreamFieldId}
-                        className={styles.settingsSeparator}
-                        checked={webSourceDisablesStreamingAndFollowup ? false : shouldStream}
-                        label={t("labels.shouldStream")}
-                        onChange={(_ev, checked) => onChange("shouldStream", !!checked)}
-                        aria-labelledby={shouldStreamId}
-                        disabled={webSourceDisablesStreamingAndFollowup}
-                        onRenderLabel={props => renderLabel(props, shouldStreamId, shouldStreamFieldId, t("helpTexts.streamChat"))}
-                    />
+                <fieldset className={styles.fieldset}>
+                    <legend className={styles.legend}>{t("chatSettings") || "Chat Settings"}</legend>
+                    <Stack tokens={{ childrenGap: 8 }}>
+                        <Checkbox
+                            id={shouldStreamFieldId}
+                            checked={webSourceDisablesStreamingAndFollowup ? false : shouldStream}
+                            label={t("labels.shouldStream")}
+                            onChange={(_ev, checked) => onChange("shouldStream", !!checked)}
+                            aria-labelledby={shouldStreamId}
+                            disabled={webSourceDisablesStreamingAndFollowup}
+                            onRenderLabel={props => renderLabel(props, shouldStreamId, shouldStreamFieldId, t("helpTexts.streamChat"))}
+                        />
 
-                    <Checkbox
-                        id={suggestFollowupQuestionsFieldId}
-                        className={styles.settingsSeparator}
-                        checked={webSourceDisablesStreamingAndFollowup ? false : useSuggestFollowupQuestions}
-                        label={t("labels.useSuggestFollowupQuestions")}
-                        onChange={(_ev, checked) => onChange("useSuggestFollowupQuestions", !!checked)}
-                        aria-labelledby={suggestFollowupQuestionsId}
-                        disabled={webSourceDisablesStreamingAndFollowup}
-                        onRenderLabel={props =>
-                            renderLabel(props, suggestFollowupQuestionsId, suggestFollowupQuestionsFieldId, t("helpTexts.suggestFollowupQuestions"))
-                        }
-                    />
-                </>
+                        <Checkbox
+                            id={suggestFollowupQuestionsFieldId}
+                            checked={webSourceDisablesStreamingAndFollowup ? false : useSuggestFollowupQuestions}
+                            label={t("labels.useSuggestFollowupQuestions")}
+                            onChange={(_ev, checked) => onChange("useSuggestFollowupQuestions", !!checked)}
+                            aria-labelledby={suggestFollowupQuestionsId}
+                            disabled={webSourceDisablesStreamingAndFollowup}
+                            onRenderLabel={props =>
+                                renderLabel(props, suggestFollowupQuestionsId, suggestFollowupQuestionsFieldId, t("helpTexts.suggestFollowupQuestions"))
+                            }
+                        />
+                    </Stack>
+                </fieldset>
             )}
 
-            <h3 className={styles.sectionHeader}>{t("searchSettings")}</h3>
+            <h3 className={styles.sectionHeader}>{t("searchSettings") || "Search Settings"}</h3>
 
             {showAgenticRetrievalOption && (
-                <Checkbox
-                    id={agenticRetrievalFieldId}
-                    className={styles.settingsSeparator}
-                    checked={useAgenticKnowledgeBase}
-                    label={t("labels.useAgenticKnowledgeBase")}
-                    onChange={(_ev, checked) => onChange("useAgenticKnowledgeBase", !!checked)}
-                    aria-labelledby={agenticRetrievalId}
-                    onRenderLabel={props => renderLabel(props, agenticRetrievalId, agenticRetrievalFieldId, t("helpTexts.useAgenticKnowledgeBase"))}
-                />
-            )}
+                <fieldset className={styles.fieldset}>
+                    <legend className={styles.legend}>{t("agenticRetrievalSettings") || "Agentic Retrieval"}</legend>
+                    <Stack tokens={{ childrenGap: 8 }}>
+                        <Checkbox
+                            id={agenticRetrievalFieldId}
+                            checked={useAgenticKnowledgeBase}
+                            label={t("labels.useAgenticKnowledgeBase")}
+                            onChange={(_ev, checked) => onChange("useAgenticKnowledgeBase", !!checked)}
+                            aria-labelledby={agenticRetrievalId}
+                            onRenderLabel={props => renderLabel(props, agenticRetrievalId, agenticRetrievalFieldId, t("helpTexts.useAgenticKnowledgeBase"))}
+                        />
 
-            {showAgenticRetrievalOption && useAgenticKnowledgeBase && (
-                <Dropdown
-                    id={agenticReasoningEffortFieldId}
-                    className={styles.settingsSeparator}
-                    label={t("labels.agenticReasoningEffort")}
-                    selectedKey={agenticReasoningEffort}
-                    onChange={(_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => {
-                        const newValue = option?.key?.toString() ?? agenticReasoningEffort;
-                        onChange("agenticReasoningEffort", newValue);
-                        // If selecting minimal, disable and deselect web source
-                        if (newValue === "minimal" && useWebSource) {
-                            onChange("useWebSource", false);
-                        }
-                    }}
-                    aria-labelledby={agenticReasoningEffortId}
-                    options={retrievalReasoningOptions}
-                    onRenderLabel={props => renderLabel(props, agenticReasoningEffortId, agenticReasoningEffortFieldId, t("helpTexts.agenticReasoningEffort"))}
-                />
-            )}
+                        {useAgenticKnowledgeBase && (
+                            <>
+                                <Dropdown
+                                    id={agenticReasoningEffortFieldId}
+                                    className={styles.nestedCheckbox}
+                                    label={t("labels.agenticReasoningEffort")}
+                                    selectedKey={agenticReasoningEffort}
+                                    onChange={(_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => {
+                                        const newValue = option?.key?.toString() ?? agenticReasoningEffort;
+                                        onChange("agenticReasoningEffort", newValue);
+                                        // If selecting minimal, disable and deselect web source
+                                        if (newValue === "minimal" && useWebSource) {
+                                            onChange("useWebSource", false);
+                                        }
+                                    }}
+                                    aria-labelledby={agenticReasoningEffortId}
+                                    options={retrievalReasoningOptions}
+                                    onRenderLabel={props => renderLabel(props, agenticReasoningEffortId, agenticReasoningEffortFieldId, t("helpTexts.agenticReasoningEffort"))}
+                                />
 
-            {showAgenticRetrievalOption && useAgenticKnowledgeBase && showWebSourceOption && (
-                <Checkbox
-                    id={webSourceFieldId}
-                    className={styles.settingsSeparator}
-                    checked={useWebSource}
-                    label={t("labels.useWebSource")}
-                    onChange={(_ev, checked) => {
-                        onChange("useWebSource", !!checked);
-                        // If enabling web source, disable streaming and follow-up questions
-                        if (checked) {
-                            if (shouldStream) {
-                                onChange("shouldStream", false);
-                            }
-                            if (useSuggestFollowupQuestions) {
-                                onChange("useSuggestFollowupQuestions", false);
-                            }
-                        }
-                    }}
-                    aria-labelledby={webSourceId}
-                    disabled={!useAgenticKnowledgeBase || agenticReasoningEffort === "minimal"}
-                    onRenderLabel={props => renderLabel(props, webSourceId, webSourceFieldId, t("helpTexts.useWebSource"))}
-                />
-            )}
-            {showAgenticRetrievalOption && useAgenticKnowledgeBase && showSharePointSourceOption && (
-                <Checkbox
-                    id={sharePointSourceFieldId}
-                    className={styles.settingsSeparator}
-                    checked={useSharePointSource}
-                    label={t("labels.useSharePointSource")}
-                    onChange={(_ev, checked) => onChange("useSharePointSource", !!checked)}
-                    aria-labelledby={sharePointSourceId}
-                    disabled={!useAgenticKnowledgeBase}
-                    onRenderLabel={props => renderLabel(props, sharePointSourceId, sharePointSourceFieldId, t("helpTexts.useSharePointSource"))}
-                />
+                                {showWebSourceOption && (
+                                    <Checkbox
+                                        id={webSourceFieldId}
+                                        className={styles.nestedCheckbox}
+                                        checked={useWebSource}
+                                        label={t("labels.useWebSource")}
+                                        onChange={(_ev, checked) => {
+                                            onChange("useWebSource", !!checked);
+                                            // If enabling web source, disable streaming and follow-up questions
+                                            if (checked) {
+                                                if (shouldStream) {
+                                                    onChange("shouldStream", false);
+                                                }
+                                                if (useSuggestFollowupQuestions) {
+                                                    onChange("useSuggestFollowupQuestions", false);
+                                                }
+                                            }
+                                        }}
+                                        aria-labelledby={webSourceId}
+                                        disabled={!useAgenticKnowledgeBase || agenticReasoningEffort === "minimal"}
+                                        onRenderLabel={props => renderLabel(props, webSourceId, webSourceFieldId, t("helpTexts.useWebSource"))}
+                                    />
+                                )}
+                                {showSharePointSourceOption && (
+                                    <Checkbox
+                                        id={sharePointSourceFieldId}
+                                        className={styles.nestedCheckbox}
+                                        checked={useSharePointSource}
+                                        label={t("labels.useSharePointSource")}
+                                        onChange={(_ev, checked) => onChange("useSharePointSource", !!checked)}
+                                        aria-labelledby={sharePointSourceId}
+                                        disabled={!useAgenticKnowledgeBase}
+                                        onRenderLabel={props => renderLabel(props, sharePointSourceId, sharePointSourceFieldId, t("helpTexts.useSharePointSource"))}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </Stack>
+                </fieldset>
             )}
             {!useAgenticKnowledgeBase && (
                 <TextField
@@ -311,42 +318,43 @@ export const Settings = ({
                 onRenderLabel={props => renderLabel(props, excludeCategoryId, excludeCategoryFieldId, t("helpTexts.excludeCategory"))}
             />
             {showSemanticRankerOption && !useAgenticKnowledgeBase && (
-                <>
-                    <Checkbox
-                        id={semanticRankerFieldId}
-                        className={styles.settingsSeparator}
-                        checked={useSemanticRanker}
-                        label={t("labels.useSemanticRanker")}
-                        onChange={(_ev, checked) => onChange("useSemanticRanker", !!checked)}
-                        aria-labelledby={semanticRankerId}
-                        onRenderLabel={props => renderLabel(props, semanticRankerId, semanticRankerFieldId, t("helpTexts.useSemanticReranker"))}
-                    />
+                <fieldset className={styles.fieldset}>
+                    <legend className={styles.legend}>{t("semanticSearchSettings") || "Semantic Search"}</legend>
+                    <Stack tokens={{ childrenGap: 8 }}>
+                        <Checkbox
+                            id={semanticRankerFieldId}
+                            checked={useSemanticRanker}
+                            label={t("labels.useSemanticRanker")}
+                            onChange={(_ev, checked) => onChange("useSemanticRanker", !!checked)}
+                            aria-labelledby={semanticRankerId}
+                            onRenderLabel={props => renderLabel(props, semanticRankerId, semanticRankerFieldId, t("helpTexts.useSemanticReranker"))}
+                        />
 
-                    <Checkbox
-                        id={semanticCaptionsFieldId}
-                        className={styles.settingsSeparator}
-                        checked={useSemanticCaptions}
-                        label={t("labels.useSemanticCaptions")}
-                        onChange={(_ev, checked) => onChange("useSemanticCaptions", !!checked)}
-                        disabled={!useSemanticRanker}
-                        aria-labelledby={semanticCaptionsId}
-                        onRenderLabel={props => renderLabel(props, semanticCaptionsId, semanticCaptionsFieldId, t("helpTexts.useSemanticCaptions"))}
-                    />
-                </>
-            )}
-            {showQueryRewritingOption && !useAgenticKnowledgeBase && (
-                <>
-                    <Checkbox
-                        id={queryRewritingFieldId}
-                        className={styles.settingsSeparator}
-                        checked={useQueryRewriting}
-                        disabled={!useSemanticRanker}
-                        label={t("labels.useQueryRewriting")}
-                        onChange={(_ev, checked) => onChange("useQueryRewriting", !!checked)}
-                        aria-labelledby={queryRewritingFieldId}
-                        onRenderLabel={props => renderLabel(props, queryRewritingFieldId, queryRewritingFieldId, t("helpTexts.useQueryRewriting"))}
-                    />
-                </>
+                        <Checkbox
+                            id={semanticCaptionsFieldId}
+                            className={styles.nestedCheckbox}
+                            checked={useSemanticCaptions}
+                            label={t("labels.useSemanticCaptions")}
+                            onChange={(_ev, checked) => onChange("useSemanticCaptions", !!checked)}
+                            disabled={!useSemanticRanker}
+                            aria-labelledby={semanticCaptionsId}
+                            onRenderLabel={props => renderLabel(props, semanticCaptionsId, semanticCaptionsFieldId, t("helpTexts.useSemanticCaptions"))}
+                        />
+
+                        {showQueryRewritingOption && (
+                            <Checkbox
+                                id={queryRewritingFieldId}
+                                className={styles.nestedCheckbox}
+                                checked={useQueryRewriting}
+                                disabled={!useSemanticRanker}
+                                label={t("labels.useQueryRewriting")}
+                                onChange={(_ev, checked) => onChange("useQueryRewriting", !!checked)}
+                                aria-labelledby={queryRewritingFieldId}
+                                onRenderLabel={props => renderLabel(props, queryRewritingFieldId, queryRewritingFieldId, t("helpTexts.useQueryRewriting"))}
+                            />
+                        )}
+                    </Stack>
+                </fieldset>
             )}
             {showReasoningEffortOption && (
                 <Dropdown
@@ -382,7 +390,7 @@ export const Settings = ({
 
             {!useWebSource && (
                 <>
-                    <h3 className={styles.sectionHeader}>{t("llmSettings")}</h3>
+                    <h3 className={styles.sectionHeader}>{t("llmSettings") || "LLM Settings"}</h3>
                     <TextField
                         id={promptTemplateFieldId}
                         className={styles.settingsSeparator}
