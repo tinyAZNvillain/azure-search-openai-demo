@@ -447,15 +447,17 @@ const Chat = () => {
                 break;
             case "useAgenticKnowledgeBase": {
                 setUseAgenticRetrieval(value);
-                let effectiveWebSource = webSourceEnabled;
-                if (!value && webSourceEnabled) {
-                    effectiveWebSource = false;
-                    setWebSourceEnabled(false);
-                    setHideMinimalRetrievalReasoningOption(false);
-                }
-                // Only web source disables streaming
+                // SIMPLIFIED: Agentic retrieval ON = web sources ON, Agentic retrieval OFF = web sources OFF
+                const effectiveWebSource = !!value;
+                setWebSourceEnabled(effectiveWebSource);
+                setHideMinimalRetrievalReasoningOption(effectiveWebSource);
+                // Disable streaming when agentic with web
                 const shouldDisableStreaming = !!value && effectiveWebSource;
                 updateStreamingPreference(streamingEnabled, shouldDisableStreaming);
+                // Disable follow-up questions when web sources enabled
+                if (effectiveWebSource) {
+                    setUseSuggestFollowupQuestions(false);
+                }
                 break;
             }
             case "useWebSource":
@@ -701,7 +703,7 @@ const Chat = () => {
                         showAgenticRetrievalOption={showAgenticRetrievalOption}
                         useAgenticKnowledgeBase={useAgenticKnowledgeBase}
                         useWebSource={webSourceEnabled}
-                        showWebSourceOption={webSourceSupported}
+                        showWebSourceOption={false}
                         useSharePointSource={sharePointSourceEnabled}
                         showSharePointSourceOption={sharePointSourceSupported}
                         hideMinimalRetrievalReasoningOption={hideMinimalRetrievalReasoningOption}

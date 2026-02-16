@@ -463,6 +463,7 @@ async def setup_clients():
     USE_CHAT_HISTORY_BROWSER = os.getenv("USE_CHAT_HISTORY_BROWSER", "").lower() == "true"
     USE_CHAT_HISTORY_COSMOS = os.getenv("USE_CHAT_HISTORY_COSMOS", "").lower() == "true"
     USE_AGENTIC_KNOWLEDGEBASE = os.getenv("USE_AGENTIC_KNOWLEDGEBASE", "").lower() == "true"
+    logging.info(f"🔍 DEBUG: USE_AGENTIC_KNOWLEDGEBASE env var = '{os.getenv('USE_AGENTIC_KNOWLEDGEBASE', '')}', evaluated to: {USE_AGENTIC_KNOWLEDGEBASE}")
     USE_WEB_SOURCE = os.getenv("USE_WEB_SOURCE", "").lower() == "true"
     USE_SHAREPOINT_SOURCE = os.getenv("USE_SHAREPOINT_SOURCE", "").lower() == "true"
     AGENTIC_KNOWLEDGEBASE_REASONING_EFFORT = os.getenv("AGENTIC_KNOWLEDGEBASE_REASONING_EFFORT", "low")

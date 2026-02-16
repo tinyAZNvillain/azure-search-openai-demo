@@ -130,39 +130,39 @@ class ChatReadRetrieveReadApproach(Approach):
         import re
         citations_in_response = re.findall(r'\[([^\]]+)\]', content or "")
 
-        print("\n" + "🤖"*40)
-        print("🤖 LLM RESPONSE ANALYSIS")
-        print("🤖"*40)
+        print("\n" + "="*80)
+        print("LLM RESPONSE ANALYSIS")
+        print("="*80)
         print(f"  Response Length: {len(content) if content else 0} characters")
         print(f"  Citations Found in Response: {len(citations_in_response)}")
         if citations_in_response:
             unique_citations = list(set(citations_in_response))
             print(f"  Unique Citations Used: {len(unique_citations)}")
-            print(f"\n  📎 Citations Actually Used by Model:")
+            print(f"\n  Citations Actually Used by Model:")
             for idx, citation in enumerate(unique_citations, 1):
                 print(f"      [{idx}] [{citation}]")
 
             # Check if citations match what was provided
             available_citations = extra_info.data_points.citations or []
-            print(f"\n  ✅ Citation Validation:")
+            print(f"\n  Citation Validation:")
             for citation in unique_citations:
                 if citation in available_citations:
-                    print(f"      ✓ [{citation}] - Valid (was provided to model)")
+                    print(f"      [OK] [{citation}] - Valid (was provided to model)")
                 else:
-                    print(f"      ✗ [{citation}] - INVALID (NOT in provided citations!)")
+                    print(f"      [X] [{citation}] - INVALID (NOT in provided citations!)")
 
             # Show citations that were provided but NOT used
             unused_citations = [c for c in available_citations if c not in citations_in_response]
             if unused_citations:
-                print(f"\n  📋 Citations Provided But NOT Used: {len(unused_citations)}")
+                print(f"\n  Citations Provided But NOT Used: {len(unused_citations)}")
                 for idx, citation in enumerate(unused_citations[:10], 1):  # Show first 10
                     print(f"      [{idx}] {citation}")
                 if len(unused_citations) > 10:
                     print(f"      ... and {len(unused_citations) - 10} more")
         else:
-            print(f"  ⚠️  No citations found in response!")
+            print(f"  WARNING: No citations found in response!")
             print(f"  Available citations were: {len(extra_info.data_points.citations or [])}")
-        print("🤖"*40 + "\n")
+        print("="*80 + "\n")
         if overrides.get("suggest_followup_questions"):
             content, followup_questions = self.extract_followup_questions(content)
             extra_info.followup_questions = followup_questions
@@ -183,7 +183,7 @@ class ChatReadRetrieveReadApproach(Approach):
         }
 
         print("\n" + "="*80)
-        print("📊 COMPLETE REQUEST SUMMARY")
+        print("COMPLETE REQUEST SUMMARY")
         print("="*80)
         print(f"  Original Query: {messages[-1]['content'] if messages else 'N/A'}")
         print(f"  Top-K Requested: {overrides.get('top', 3)}")
@@ -347,19 +347,19 @@ class ChatReadRetrieveReadApproach(Approach):
 
             return (extra_info, return_answer())
 
-        print("\n" + "🎯"*40)
-        print("🎯 COMPOSING FINAL LLM PROMPT")
-        print("🎯"*40)
+        print("\n" + "="*80)
+        print("COMPOSING FINAL LLM PROMPT")
+        print("="*80)
         print(f"  User Query: {original_user_query}")
         print(f"  Past Messages in Context: {len(messages[:-1])}")
         print(f"  Text Sources Included: {len(extra_info.data_points.text) if extra_info.data_points.text else 0}")
         print(f"  Image Sources Included: {len(extra_info.data_points.images) if extra_info.data_points.images else 0}")
         print(f"  Citations Available to Model: {len(extra_info.data_points.citations) if extra_info.data_points.citations else 0}")
         if extra_info.data_points.citations:
-            print(f"\n  📚 Citations List Provided to Model:")
+            print(f"\n  Citations List Provided to Model:")
             for idx, citation in enumerate(extra_info.data_points.citations, 1):
                 print(f"      [{idx}] {citation}")
-        print("🎯"*40 + "\n")
+        print("="*80 + "\n")
 
         messages = self.prompt_manager.render_prompt(
             self.answer_prompt,
@@ -374,16 +374,16 @@ class ChatReadRetrieveReadApproach(Approach):
             },
         )
 
-        print("\n" + "✨"*40)
-        print("✨ PROMPT RENDERED - READY TO CALL LLM")
-        print("✨"*40)
+        print("\n" + "="*80)
+        print("PROMPT RENDERED - READY TO CALL LLM")
+        print("="*80)
         print(f"  Model: {self.chatgpt_model}")
         print(f"  Deployment: {self.chatgpt_deployment}")
         print(f"  Total Messages in Prompt: {len(messages)}")
         # Calculate approximate token count
         total_prompt_chars = sum(len(str(msg.get('content', ''))) for msg in messages)
         print(f"  Approximate Prompt Tokens (chars/4): ~{total_prompt_chars//4:,}")
-        print("✨"*40 + "\n")
+        print("="*80 + "\n")
 
         chat_coroutine = cast(
             Awaitable[ChatCompletion] | Awaitable[AsyncStream[ChatCompletionChunk]],
@@ -432,9 +432,9 @@ class ChatReadRetrieveReadApproach(Approach):
         if not isinstance(original_user_query, str):
             raise ValueError("The most recent message content must be a string.")
 
-        print("\n" + "🌟"*40)
-        print("🚀 RUN SEARCH APPROACH - CONFIGURATION")
-        print("🌟"*40)
+        print("\n" + "="*80)
+        print("RUN SEARCH APPROACH - CONFIGURATION")
+        print("="*80)
         print(f"  Original User Query: {original_user_query}")
         print(f"  Retrieval Mode: {overrides.get('retrieval_mode', 'text')}")
         print(f"  Top-K: {top}")
@@ -450,7 +450,7 @@ class ChatReadRetrieveReadApproach(Approach):
         print(f"  Send Image Sources: {send_image_sources}")
         print(f"  Search Text Embeddings: {search_text_embeddings}")
         print(f"  Search Image Embeddings: {search_image_embeddings}")
-        print("🌟"*40 + "\n")
+        print("="*80 + "\n")
 
         # STEP 1: Generate an optimized keyword search query based on the chat history and the last question
 
@@ -471,12 +471,12 @@ class ChatReadRetrieveReadApproach(Approach):
 
         query_text = rewrite_result.query
 
-        print("\n" + "💭"*40)
-        print("🔄 QUERY REWRITING RESULT")
-        print("💭"*40)
+        print("\n" + "="*80)
+        print("QUERY REWRITING RESULT")
+        print("="*80)
         print(f"  Original Query: {original_user_query}")
         print(f"  Rewritten Query: {query_text}")
-        print("💭"*40 + "\n")
+        print("="*80 + "\n")
 
         # STEP 2: Retrieve relevant documents from the search index with the GPT optimized query
 
@@ -511,9 +511,9 @@ class ChatReadRetrieveReadApproach(Approach):
             user_oid=auth_claims.get("oid"),
         )
 
-        print("\n" + "📦"*40)
-        print("📦 DATA READY FOR LLM PROMPT")
-        print("📦"*40)
+        print("\n" + "="*80)
+        print("DATA READY FOR LLM PROMPT")
+        print("="*80)
         print(f"  Results Returned from Search: {len(results)}")
         print(f"  Citations Available: {len(data_points.citations) if data_points.citations else 0}")
         print(f"  Text Sources Being Sent: {len(data_points.text) if data_points.text else 0}")
@@ -522,7 +522,7 @@ class ChatReadRetrieveReadApproach(Approach):
             total_chars = sum(len(text) for text in data_points.text)
             print(f"  Total Text Characters: {total_chars:,}")
             print(f"  Estimated Tokens (chars/4): ~{total_chars//4:,}")
-        print("📦"*40 + "\n")
+        print("="*80 + "\n")
 
         extra_info = ExtraInfo(
             data_points,
@@ -571,16 +571,29 @@ class ChatReadRetrieveReadApproach(Approach):
         send_text_sources = overrides.get("send_text_sources", True)
         send_image_sources = overrides.get("send_image_sources", self.multimodal_enabled) and self.multimodal_enabled
         retrieval_reasoning_effort = overrides.get("retrieval_reasoning_effort", self.retrieval_reasoning_effort)
+
+        print(f"\n[DEBUG] run_agentic_retrieval_approach - Web Source Configuration:")
+        print(f"  self.web_source_enabled: {self.web_source_enabled}")
+        print(f"  overrides.get('use_web_source'): {overrides.get('use_web_source')}")
+
         # Overrides can only disable web source support configured at construction time.
         use_web_source = self.web_source_enabled
         override_use_web_source = overrides.get("use_web_source")
         if isinstance(override_use_web_source, bool):
             use_web_source = use_web_source and override_use_web_source
+            print(f"  >> Override applied: {self.web_source_enabled} AND {override_use_web_source} = {use_web_source}")
+        else:
+            print(f"  >> No override, using: {use_web_source}")
+
         # Overrides can only disable sharepoint source support configured at construction time.
         use_sharepoint_source = self.use_sharepoint_source
         override_use_sharepoint_source = overrides.get("use_sharepoint_source")
         if isinstance(override_use_sharepoint_source, bool):
             use_sharepoint_source = use_sharepoint_source and override_use_sharepoint_source
+
+        print(f"  Final use_web_source: {use_web_source}")
+        print(f"  Final use_sharepoint_source: {use_sharepoint_source}")
+
         if use_web_source and retrieval_reasoning_effort == "minimal":
             raise Exception("Web source cannot be used with minimal retrieval reasoning effort.")
 
@@ -622,20 +635,36 @@ class ChatReadRetrieveReadApproach(Approach):
         use_web_source: bool,
         use_sharepoint_source: bool,
     ) -> tuple[KnowledgeBaseRetrievalClient, bool, bool]:
+        print(f"\n[DEBUG] _select_knowledgebase_client called:")
+        print(f"  Requested use_web_source: {use_web_source}")
+        print(f"  Requested use_sharepoint_source: {use_sharepoint_source}")
+        print(f"  Available clients:")
+        print(f"    - knowledgebase_client: {self.knowledgebase_client is not None}")
+        print(f"    - knowledgebase_client_with_web: {self.knowledgebase_client_with_web is not None}")
+        print(f"    - knowledgebase_client_with_sharepoint: {self.knowledgebase_client_with_sharepoint is not None}")
+        print(f"    - knowledgebase_client_with_web_and_sharepoint: {self.knowledgebase_client_with_web_and_sharepoint is not None}")
+
         if use_web_source and use_sharepoint_source:
             if self.knowledgebase_client_with_web_and_sharepoint:
+                print(f"  >> Selected: knowledgebase_client_with_web_and_sharepoint (web=True, sp=True)")
                 return self.knowledgebase_client_with_web_and_sharepoint, True, True
             if self.knowledgebase_client_with_web:
+                print(f"  >> Selected: knowledgebase_client_with_web (web=True, sp=False)")
                 return self.knowledgebase_client_with_web, True, False
             if self.knowledgebase_client_with_sharepoint:
+                print(f"  >> Selected: knowledgebase_client_with_sharepoint (web=False, sp=True)")
                 return self.knowledgebase_client_with_sharepoint, False, True
 
         if use_web_source and self.knowledgebase_client_with_web:
+            print(f"  >> Selected: knowledgebase_client_with_web (web=True, sp=False)")
             return self.knowledgebase_client_with_web, True, False
 
         if use_sharepoint_source and self.knowledgebase_client_with_sharepoint:
+            print(f"  >> Selected: knowledgebase_client_with_sharepoint (web=False, sp=True)")
             return self.knowledgebase_client_with_sharepoint, False, True
 
         if self.knowledgebase_client:
+            print(f"  >> Selected: knowledgebase_client (FALLBACK - web=False, sp=False)")
+            print(f"  >> WARNING: Requested web/sp sources but no appropriate client available!")
             return self.knowledgebase_client, False, False
         raise ValueError("Agentic retrieval requested but no knowledge base is configured")

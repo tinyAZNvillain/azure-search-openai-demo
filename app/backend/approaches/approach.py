@@ -312,7 +312,7 @@ class Approach(ABC):
         access_token: Optional[str] = None,
     ) -> list[Document]:
         print("\n" + "="*80)
-        print("🔍 SEARCH PARAMETERS:")
+        print("SEARCH PARAMETERS:")
         print("="*80)
         print(f"  Query Text: {query_text}")
         print(f"  Top-K Requested: {top}")
@@ -515,7 +515,13 @@ class Approach(ABC):
             list[KnowledgeSourceParams], knowledge_source_params
         )
 
+        # DEBUG: Log web/SharePoint source configuration
+        print(f"\n[DEBUG] Agentic Retrieval Configuration:")
+        print(f"  use_web_source: {use_web_source}")
+        print(f"  use_sharepoint_source: {use_sharepoint_source}")
+
         if use_web_source:
+            print(f"  >> Adding WEB source to knowledge_source_params_list")
             knowledge_source_params_list.append(
                 WebKnowledgeSourceParams(
                     knowledge_source_name="web",
@@ -526,6 +532,7 @@ class Approach(ABC):
             )
 
         if use_sharepoint_source:
+            print(f"  >> Adding SHAREPOINT source to knowledge_source_params_list")
             knowledge_source_params_list.append(
                 RemoteSharePointKnowledgeSourceParams(
                     knowledge_source_name="sharepoint",
@@ -582,9 +589,20 @@ class Approach(ABC):
                 if msg["role"] != "system"
             ]
             agentic_retrieval_input["messages"] = kb_messages
-        # When we're not using a web source, set output mode to extractiveData to avoid synthesized answer
-        if not use_web_source:
-            agentic_retrieval_input["output_mode"] = "extractiveData"
+
+        # Set output mode based on whether we're using web sources
+        # IMPORTANT: Azure Knowledge Bases used for agentic retrieval are configured
+        # with web sources in Azure, so we NEVER use extractive mode
+        print(f"\n[DEBUG] Setting output mode:")
+        print(f"  Agentic retrieval always uses GENERATIVE mode (no extractive)")
+        print(f"  Reason: Azure KBs are configured with web sources")
+        print(f"  NOT setting output_mode (will default to answer synthesis)")
+        # Never set extractive mode for agentic retrieval
+        # The knowledge bases in Azure have web sources configured, so extractive mode fails
+
+        print(f"[DEBUG] agentic_retrieval_input keys: {list(agentic_retrieval_input.keys())}")
+        if "output_mode" in agentic_retrieval_input:
+            print(f"[DEBUG] output_mode value: {agentic_retrieval_input['output_mode']}")
 
         retrieval_effort: Optional[
             KnowledgeRetrievalMinimalReasoningEffort
@@ -604,6 +622,18 @@ class Approach(ABC):
             "retrieval_reasoning_effort": retrieval_effort,
         }
         request_kwargs.update(agentic_retrieval_input)
+
+        # SAFEGUARD: NEVER use extractive mode with agentic retrieval
+        # Azure Knowledge Bases for agentic retrieval have web sources configured in Azure
+        # Even if we don't explicitly add web sources in the request, the KB has them
+        print(f"\n[DEBUG] Pre-API Call Validation:")
+        print(f"  Current output_mode: {request_kwargs.get('output_mode', 'NOT SET')}")
+
+        if request_kwargs.get("output_mode") == "extractiveData":
+            print(f"  [WARNING] Extractive mode detected - REMOVING (KB has web sources in Azure)")
+            request_kwargs.pop("output_mode", None)
+
+        print(f"  Final output_mode: {request_kwargs.get('output_mode', 'NOT SET (will default to synthesis)')}")
 
         response = await knowledgebase_client.retrieve(
             retrieval_request=KnowledgeBaseRetrievalRequest(**request_kwargs),

@@ -3,8 +3,14 @@ import { useBoolean, useId } from "@fluentui/react-hooks";
 import { useTranslation } from "react-i18next";
 
 const stackTokens: IStackTokens = {
-    childrenGap: 4,
-    maxWidth: 300
+    childrenGap: 4
+};
+
+const labelStackStyles: Partial<IStackStyles> = {
+    root: {
+        display: 'inline-flex',
+        alignItems: 'center'
+    }
 };
 
 const labelCalloutStackStyles: Partial<IStackStyles> = { root: { padding: 20 } };
@@ -26,7 +32,7 @@ export const HelpCallout = (props: IHelpCalloutProps): JSX.Element => {
 
     return (
         <>
-            <Stack horizontal verticalAlign="center" tokens={stackTokens}>
+            <Stack horizontal verticalAlign="center" tokens={stackTokens} styles={labelStackStyles}>
                 <label id={props.labelId} htmlFor={props.fieldId}>
                     {props.label}
                 </label>

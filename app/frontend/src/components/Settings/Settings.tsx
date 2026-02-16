@@ -148,7 +148,6 @@ export const Settings = ({
         <div className={className}>
             {streamingEnabled && (
                 <fieldset className={styles.fieldset}>
-                    <legend className={styles.legend}>{t("chatSettings") || "Chat Settings"}</legend>
                     <Stack tokens={{ childrenGap: 8 }}>
                         <Checkbox
                             id={shouldStreamFieldId}
@@ -179,7 +178,6 @@ export const Settings = ({
 
             {showAgenticRetrievalOption && (
                 <fieldset className={styles.fieldset}>
-                    <legend className={styles.legend}>{t("agenticRetrievalSettings") || "Agentic Retrieval"}</legend>
                     <Stack tokens={{ childrenGap: 8 }}>
                         <Checkbox
                             id={agenticRetrievalFieldId}
@@ -319,7 +317,6 @@ export const Settings = ({
             />
             {showSemanticRankerOption && !useAgenticKnowledgeBase && (
                 <fieldset className={styles.fieldset}>
-                    <legend className={styles.legend}>{t("semanticSearchSettings") || "Semantic Search"}</legend>
                     <Stack tokens={{ childrenGap: 8 }}>
                         <Checkbox
                             id={semanticRankerFieldId}
